@@ -7,3 +7,4 @@ coverage
 dist
 generated
 node_modules
+.next

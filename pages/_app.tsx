@@ -1,6 +1,7 @@
 /* eslint-disable react/jsx-props-no-spreading */
-import { AppProps } from 'next/app'
+import '../styles.css';
+import {AppProps} from 'next/app';
 
-export default function MyApp ({ Component, pageProps }: AppProps): JSX.Element {
-  return <Component {...pageProps} />
+export default function MyApp({Component, pageProps}: AppProps): JSX.Element {
+  return <Component {...pageProps} />;
 }

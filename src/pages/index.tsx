@@ -2,6 +2,9 @@ import {useEffect, useRef} from 'react';
 import {Libraries, Loader} from '@googlemaps/js-api-loader';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
+import {performFetchGet} from '../common/api';
+import {CarparkAvailabilityData} from '../common/types';
+import { DataTexture3D } from 'three';
 
 let currentLat: number;
 let currentLong: number;
@@ -13,7 +16,7 @@ const apiOptions = {
 const mapOptions = {
   tilt: 0,
   heading: 0,
-  zoom: 17,
+  zoom: 12,
   center: {lat: 1.304833, lng: 103.831833},
   mapId: process.env.MAPS_ID || '',
   fullscreenControl: false, // remove the top-right button
@@ -107,21 +110,53 @@ async function initWebGLOverlayView(map: google.maps.Map) {
   webGLOverlayView.setMap(map);
 }
 
-async function retrieveMarkerData() {
+async function retrieveMarkerData(skipValue: string): Promise<CarparkAvailabilityData> {
+  const data: {
+    value: {
+      CarParkID: string;
+      Area: string;
+      Development: string;
+      Location: string;
+      AvailableLots: number;
+      LotType: string; // C
+      Agency: string;
+    }[];
+    metadata: {};
+  } = await performFetchGet(`/datamall/carparkavailability` , `/${skipValue}`)
+  return data;
 }
 
-async function placeMarkers(map: google.maps.Map, data: void) {
-  const pinContent = document.createElement('div');
-  pinContent.className = 'pin-content';
-  pinContent.textContent = 'Here'
+async function placeMarkers(map: google.maps.Map, data: CarparkAvailabilityData) {
+  
 
-  const markerView = new google.maps.marker.AdvancedMarkerView({
-    map,
-    position: {lat: currentLat, lng: currentLong, altitude: 100} as google.maps.LatLngAltitude,
-    // position: {lat: 1.304833, lng: 103.831833, altitude: 100} as google.maps.LatLngAltitude,
-    title: 'Hello world',
-    content: pinContent
-  });
+  data.value.forEach((element) => {
+    const pinContent = document.createElement('div');
+    pinContent.className = 'pin-content';
+    pinContent.textContent = element.AvailableLots.toString();
+
+    let lat = Number(element.Location.split(` `)[0]);
+    let long = Number(element.Location.split(` `)[1]);
+    
+    const markerView = new google.maps.marker.AdvancedMarkerView({
+      map,
+      position: {lat: lat, lng: long, altitude: 100} as google.maps.LatLngAltitude,
+      // position: {lat: 1.304833, lng: 103.831833, altitude: 100} as google.maps.LatLngAltitude,
+      title: element.Development,
+      content: pinContent
+    });
+  })
+
+  // const pinContent = document.createElement('div');
+  // pinContent.className = 'pin-content';
+  // pinContent.textContent = 'Here'
+
+  // const markerView = new google.maps.marker.AdvancedMarkerView({
+  //   map,
+  //   position: {lat: currentLat, lng: currentLong, altitude: 100} as google.maps.LatLngAltitude,
+  //   // position: {lat: 1.304833, lng: 103.831833, altitude: 100} as google.maps.LatLngAltitude,
+  //   title: 'Hello world',
+  //   content: pinContent
+  // });
 }
 
 const IndexPage = (): JSX.Element => {
@@ -138,24 +173,49 @@ const IndexPage = (): JSX.Element => {
       let map;
       loader.load().then(async () => {
         const {google} = window;
-        map = new google.maps.Map(googlemap.current as HTMLElement, {
-          tilt: 0,
-          heading: 0,
-          zoom: 17,
-          // center: {lat: 1.304833, lng: 103.831833},
-          center: {lat: currentLat, lng: currentLong},
-          mapId: process.env.MAPS_ID || '',
-          fullscreenControl: true, // remove the top-right button
-          mapTypeControl: false, // remove the top-left buttons
-          streetViewControl: false, // remove the pegman
-          zoomControl: false, // remove the bottom-right buttons
-          scrollwheel: false,
-          draggable: false,
-          scaleControl: false,
-        });
+        map = new google.maps.Map(googlemap.current as HTMLElement, 
+        //   {
+        //   tilt: 0,
+        //   heading: 0,
+        //   zoom: 17,
+        //   center: {lat: 1.304833, lng: 103.831833},
+        //   // center: {lat: currentLat, lng: currentLong},
+        //   mapId: process.env.MAPS_ID || '',
+        //   fullscreenControl: true, // remove the top-right button
+        //   mapTypeControl: true, // remove the top-left buttons
+        //   streetViewControl: true, // remove the pegman
+        //   zoomControl: true, // remove the bottom-right buttons
+        //   scrollwheel: false,
+        //   draggable: false,
+        //   scaleControl: false,
+        // }
+        mapOptions
+        );
         await initWebGLOverlayView(map);
-        const data= await retrieveMarkerData();
+        const data= await retrieveMarkerData("0");
+
+        // let isDataLoaded = false;
+        // let count = 0;
+        // while (isDataLoaded != true){
+        //   const data= await retrieveMarkerData(count.toString());
+        //   await placeMarkers(map, data);
+        //   if (data.value.length != 500){
+        //     isDataLoaded = true;
+        //   }
+        //   count = count + 500;
+        //   console.log(count);
+        // }
+        // let data2: CarparkAvailabilityData;
+        const data2= await retrieveMarkerData("500");
+        const data3= await retrieveMarkerData("1000");
+        const data4= await retrieveMarkerData("1500");
+        const data5= await retrieveMarkerData("2000");
+        
         await placeMarkers(map, data);
+        await placeMarkers(map, data2);
+        await placeMarkers(map, data3);
+        await placeMarkers(map, data4);
+        await placeMarkers(map, data5);
       });
       
   });

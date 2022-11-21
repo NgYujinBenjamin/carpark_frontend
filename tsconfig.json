@@ -22,10 +22,10 @@
     "incremental": true
   },
   "include": [
-    "pages/**/*",
+    "src/pages/**/*",
     "./**.js",
     "./**.ts",
-    "pages/test",
+    "src/pages/test",
     "./public/*.js"
   ],
   "exclude": [

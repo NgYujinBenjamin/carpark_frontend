@@ -4,14 +4,13 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
 import {performFetchGet} from '../common/api';
 import {CarparkAvailabilityData} from '../common/types';
-import { DataTexture3D } from 'three';
 
 let currentLat: number;
 let currentLong: number;
 const apiOptions = {
   apiKey: process.env.MAPS_API_KEY || '',
   version: 'beta',
-  libraries: ['marker'] as Libraries
+  libraries: ['marker'] as Libraries,
 };
 const mapOptions = {
   tilt: 0,
@@ -122,29 +121,27 @@ async function retrieveMarkerData(skipValue: string): Promise<CarparkAvailabilit
       Agency: string;
     }[];
     metadata: {};
-  } = await performFetchGet(`/datamall/carparkavailability` , `/${skipValue}`)
+  } = await performFetchGet(`/datamall/carparkavailability`, `/${skipValue}`);
   return data;
 }
 
 async function placeMarkers(map: google.maps.Map, data: CarparkAvailabilityData) {
-  
-
   data.value.forEach((element) => {
     const pinContent = document.createElement('div');
     pinContent.className = 'pin-content';
     pinContent.textContent = element.AvailableLots.toString();
 
-    let lat = Number(element.Location.split(` `)[0]);
-    let long = Number(element.Location.split(` `)[1]);
-    
+    const lat = Number(element.Location.split(` `)[0]);
+    const long = Number(element.Location.split(` `)[1]);
+
     const markerView = new google.maps.marker.AdvancedMarkerView({
       map,
-      position: {lat: lat, lng: long, altitude: 100} as google.maps.LatLngAltitude,
+      position: {lat, lng: long, altitude: 100} as google.maps.LatLngAltitude,
       // position: {lat: 1.304833, lng: 103.831833, altitude: 100} as google.maps.LatLngAltitude,
       title: element.Development,
-      content: pinContent
+      content: pinContent,
     });
-  })
+  });
 
   // const pinContent = document.createElement('div');
   // pinContent.className = 'pin-content';
@@ -162,18 +159,17 @@ async function placeMarkers(map: google.maps.Map, data: CarparkAvailabilityData)
 const IndexPage = (): JSX.Element => {
   const googlemap = useRef<HTMLDivElement>(null);
   useEffect(() => {
-
     navigator.geolocation.watchPosition((position) => {
       currentLat = position.coords.latitude;
       currentLong = position.coords.longitude;
     });
 
-
-      const loader = new Loader(apiOptions);
-      let map;
-      loader.load().then(async () => {
-        const {google} = window;
-        map = new google.maps.Map(googlemap.current as HTMLElement, 
+    const loader = new Loader(apiOptions);
+    let map;
+    loader.load().then(async () => {
+      const {google} = window;
+      map = new google.maps.Map(
+        googlemap.current as HTMLElement,
         //   {
         //   tilt: 0,
         //   heading: 0,
@@ -189,35 +185,34 @@ const IndexPage = (): JSX.Element => {
         //   draggable: false,
         //   scaleControl: false,
         // }
-        mapOptions
-        );
-        await initWebGLOverlayView(map);
-        const data= await retrieveMarkerData("0");
+        mapOptions,
+      );
+      await initWebGLOverlayView(map);
+      const data = await retrieveMarkerData('0');
 
-        // let isDataLoaded = false;
-        // let count = 0;
-        // while (isDataLoaded != true){
-        //   const data= await retrieveMarkerData(count.toString());
-        //   await placeMarkers(map, data);
-        //   if (data.value.length != 500){
-        //     isDataLoaded = true;
-        //   }
-        //   count = count + 500;
-        //   console.log(count);
-        // }
-        // let data2: CarparkAvailabilityData;
-        const data2= await retrieveMarkerData("500");
-        const data3= await retrieveMarkerData("1000");
-        const data4= await retrieveMarkerData("1500");
-        const data5= await retrieveMarkerData("2000");
-        
-        await placeMarkers(map, data);
-        await placeMarkers(map, data2);
-        await placeMarkers(map, data3);
-        await placeMarkers(map, data4);
-        await placeMarkers(map, data5);
-      });
-      
+      // let isDataLoaded = false;
+      // let count = 0;
+      // while (isDataLoaded != true){
+      //   const data= await retrieveMarkerData(count.toString());
+      //   await placeMarkers(map, data);
+      //   if (data.value.length != 500){
+      //     isDataLoaded = true;
+      //   }
+      //   count = count + 500;
+      //   console.log(count);
+      // }
+      // let data2: CarparkAvailabilityData;
+      const data2 = await retrieveMarkerData('500');
+      const data3 = await retrieveMarkerData('1000');
+      const data4 = await retrieveMarkerData('1500');
+      const data5 = await retrieveMarkerData('2000');
+
+      await placeMarkers(map, data);
+      await placeMarkers(map, data2);
+      await placeMarkers(map, data3);
+      await placeMarkers(map, data4);
+      await placeMarkers(map, data5);
+    });
   });
 
   return <div id="map" ref={googlemap} />;

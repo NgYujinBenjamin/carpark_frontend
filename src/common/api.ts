@@ -11,7 +11,7 @@ export const performFetchGet = async <T>(path: string, query: string, accessToke
     headers,
   };
 
-  const response = await fetch(`http://localhost:5000/api${path}${query}`, options);
+  const response = await fetch(`${process.env.BASE_URL}${path}${query}`, options);
 
   if (response.ok) {
     try {

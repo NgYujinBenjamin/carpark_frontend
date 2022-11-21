@@ -18,14 +18,14 @@ const mapOptions = {
   zoom: 12,
   center: {lat: 1.304833, lng: 103.831833},
   mapId: process.env.MAPS_ID || '',
-  fullscreenControl: false, // remove the top-right button
-  mapTypeControl: false, // remove the top-left buttons
-  streetViewControl: false, // remove the pegman
-  zoomControl: false, // remove the bottom-right buttons
-  scrollWheel: false,
-  draggable: false,
-  navigationControl: false,
-  scaleControl: false,
+  fullscreenControl: true, // remove the top-right button
+  mapTypeControl: true, // remove the top-left buttons
+  streetViewControl: true, // remove the pegman
+  zoomControl: true, // remove the bottom-right buttons
+  scrollWheel: true,
+  draggable: true,
+  navigationControl: true,
+  scaleControl: true,
 };
 
 async function initWebGLOverlayView(map: google.maps.Map) {
@@ -45,7 +45,6 @@ async function initWebGLOverlayView(map: google.maps.Map) {
 
     loader = new GLTFLoader();
 
-    // loader.load()
     const source = './pin.gltf';
     loader.load(source, (gltf) => {
       // gltf.scene.scale.set(25,25,25);
@@ -137,7 +136,6 @@ async function placeMarkers(map: google.maps.Map, data: CarparkAvailabilityData)
     const markerView = new google.maps.marker.AdvancedMarkerView({
       map,
       position: {lat, lng: long, altitude: 100} as google.maps.LatLngAltitude,
-      // position: {lat: 1.304833, lng: 103.831833, altitude: 100} as google.maps.LatLngAltitude,
       title: element.Development,
       content: pinContent,
     });
@@ -170,38 +168,10 @@ const IndexPage = (): JSX.Element => {
       const {google} = window;
       map = new google.maps.Map(
         googlemap.current as HTMLElement,
-        //   {
-        //   tilt: 0,
-        //   heading: 0,
-        //   zoom: 17,
-        //   center: {lat: 1.304833, lng: 103.831833},
-        //   // center: {lat: currentLat, lng: currentLong},
-        //   mapId: process.env.MAPS_ID || '',
-        //   fullscreenControl: true, // remove the top-right button
-        //   mapTypeControl: true, // remove the top-left buttons
-        //   streetViewControl: true, // remove the pegman
-        //   zoomControl: true, // remove the bottom-right buttons
-        //   scrollwheel: false,
-        //   draggable: false,
-        //   scaleControl: false,
-        // }
         mapOptions,
       );
       await initWebGLOverlayView(map);
       const data = await retrieveMarkerData('0');
-
-      // let isDataLoaded = false;
-      // let count = 0;
-      // while (isDataLoaded != true){
-      //   const data= await retrieveMarkerData(count.toString());
-      //   await placeMarkers(map, data);
-      //   if (data.value.length != 500){
-      //     isDataLoaded = true;
-      //   }
-      //   count = count + 500;
-      //   console.log(count);
-      // }
-      // let data2: CarparkAvailabilityData;
       const data2 = await retrieveMarkerData('500');
       const data3 = await retrieveMarkerData('1000');
       const data4 = await retrieveMarkerData('1500');

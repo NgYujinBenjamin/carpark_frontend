@@ -6,3 +6,5 @@ Tutorial on using Maps API with WebGL overlay: https://developers.google.com/cod
 Caveats of using nextjs with Google Maps API: https://medium.com/web-dev-survey-from-kyoto/3-gotchas-of-google-maps-api-when-used-with-next-js-and-eslint-dba627c9657d
 
 Documentation of Advanced Markers (currently available only in Beta): https://developers.google.com/maps/documentation/javascript/advanced-markers/html-markers#maps_advanced_markers_html_simple-css
+
+Sample animated markers: https://developers.google.com/maps/documentation/javascript/advanced-markers/html-markers#maps_advanced_markers_animation-css

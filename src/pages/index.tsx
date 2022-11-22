@@ -7,6 +7,15 @@ import {CarparkAvailabilityData} from '../common/types';
 
 let currentLat: number;
 let currentLong: number;
+
+currentLat = 1.304833;
+currentLong = 103.831833;
+
+let scene: THREE.Scene;
+let renderer: THREE.WebGLRenderer;
+let camera: THREE.PerspectiveCamera;
+let loader: GLTFLoader;
+
 const apiOptions = {
   apiKey: process.env.MAPS_API_KEY || '',
   version: 'beta',
@@ -15,24 +24,21 @@ const apiOptions = {
 const mapOptions = {
   tilt: 0,
   heading: 0,
-  zoom: 12,
-  center: {lat: 1.304833, lng: 103.831833},
+  zoom: 17,
+  center: {lat: currentLat, lng: currentLong},
   mapId: process.env.MAPS_ID || '',
   fullscreenControl: true, // remove the top-right button
   mapTypeControl: true, // remove the top-left buttons
-  streetViewControl: true, // remove the pegman
+  streetViewControl: false, // remove the pegman
   zoomControl: true, // remove the bottom-right buttons
-  scrollWheel: true,
-  draggable: true,
-  navigationControl: true,
-  scaleControl: true,
+  // scrollWheel: true,
+  draggable: false,
+  // navigationControl: true,
+  // scaleControl: true,
+  gestureHandling: 'cooperative',
 };
 
 async function initWebGLOverlayView(map: google.maps.Map) {
-  let scene: THREE.Scene;
-  let renderer: THREE.WebGLRenderer;
-  let camera: THREE.PerspectiveCamera;
-  let loader: GLTFLoader;
   const webGLOverlayView = new google.maps.WebGLOverlayView();
   webGLOverlayView.onAdd = () => {
     scene = new THREE.Scene();
@@ -45,10 +51,10 @@ async function initWebGLOverlayView(map: google.maps.Map) {
 
     loader = new GLTFLoader();
 
-    const source = './pin.gltf';
+    const source = 'pin.gltf';
     loader.load(source, (gltf) => {
-      // gltf.scene.scale.set(25,25,25);
-      // gltf.scene.rotation.x = 180 * Math.PI/180;
+      gltf.scene.scale.set(25, 25, 25);
+      gltf.scene.rotation.x = (180 * Math.PI) / 180;
       scene.add(gltf.scene);
     });
   };
@@ -116,72 +122,74 @@ async function retrieveMarkerData(skipValue: string): Promise<CarparkAvailabilit
       Development: string;
       Location: string;
       AvailableLots: number;
-      LotType: string; // C
+      LotType: string;
       Agency: string;
     }[];
     metadata: {};
   } = await performFetchGet(`/datamall/carparkavailability`, `/${skipValue}`);
   return data;
 }
+function distanceBetweenLatAndLong(lat1: number, lat2: number, lon1: number, lon2: number) {
+  lon1 = (lon1 * Math.PI) / 180;
+  lon2 = (lon2 * Math.PI) / 180;
+  lat1 = (lat1 * Math.PI) / 180;
+  lat2 = (lat2 * Math.PI) / 180;
+
+  let dlon = lon2 - lon1;
+  let dlat = lat2 - lat1;
+  let a = Math.pow(Math.sin(dlat / 2), 2) + Math.cos(lat1) * Math.cos(lat2) * Math.pow(Math.sin(dlon / 2), 2);
+  let c = 2 * Math.asin(Math.sqrt(a));
+  let r = 6371;
+
+  return c * r;
+}
 
 async function placeMarkers(map: google.maps.Map, data: CarparkAvailabilityData) {
   data.value.forEach((element) => {
-    const pinContent = document.createElement('div');
-    pinContent.className = 'pin-content';
-    pinContent.textContent = element.AvailableLots.toString();
-
     const lat = Number(element.Location.split(` `)[0]);
     const long = Number(element.Location.split(` `)[1]);
 
-    const markerView = new google.maps.marker.AdvancedMarkerView({
-      map,
-      position: {lat, lng: long, altitude: 100} as google.maps.LatLngAltitude,
-      title: element.Development,
-      content: pinContent,
-    });
+    if (distanceBetweenLatAndLong(lat, currentLat, long, currentLong) < 2) {
+      const pinContent = document.createElement('div');
+
+      pinContent.className = 'pin-content';
+      pinContent.textContent = element.Development + `: ` + element.AvailableLots.toString();
+
+      const markerView = new google.maps.marker.AdvancedMarkerView({
+        map,
+        position: {lat, lng: long, altitude: 100} as google.maps.LatLngAltitude,
+        title: element.Development,
+        content: pinContent,
+      });
+      markerView.addListener('click', () => {
+        console.log(element.Development);
+        renderer.setAnimationLoop(null);
+        window.open('http://www.google.com/maps/place/' + lat + ',' + long);
+      });
+    }
   });
-
-  // const pinContent = document.createElement('div');
-  // pinContent.className = 'pin-content';
-  // pinContent.textContent = 'Here'
-
-  // const markerView = new google.maps.marker.AdvancedMarkerView({
-  //   map,
-  //   position: {lat: currentLat, lng: currentLong, altitude: 100} as google.maps.LatLngAltitude,
-  //   // position: {lat: 1.304833, lng: 103.831833, altitude: 100} as google.maps.LatLngAltitude,
-  //   title: 'Hello world',
-  //   content: pinContent
-  // });
 }
 
 const IndexPage = (): JSX.Element => {
   const googlemap = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    navigator.geolocation.watchPosition((position) => {
-      currentLat = position.coords.latitude;
-      currentLong = position.coords.longitude;
-    });
+    // navigator.geolocation.watchPosition((position) => {
+    //   currentLat = position.coords.latitude;
+    //   currentLong = position.coords.longitude;
+    //   mapOptions.center = {lat: currentLat, lng: currentLong}
+    // });
 
     const loader = new Loader(apiOptions);
-    let map;
+    let map: google.maps.Map;
     loader.load().then(async () => {
       const {google} = window;
-      map = new google.maps.Map(
-        googlemap.current as HTMLElement,
-        mapOptions,
-      );
+      map = new google.maps.Map(googlemap.current as HTMLElement, mapOptions);
       await initWebGLOverlayView(map);
-      const data = await retrieveMarkerData('0');
-      const data2 = await retrieveMarkerData('500');
-      const data3 = await retrieveMarkerData('1000');
-      const data4 = await retrieveMarkerData('1500');
-      const data5 = await retrieveMarkerData('2000');
-
-      await placeMarkers(map, data);
-      await placeMarkers(map, data2);
-      await placeMarkers(map, data3);
-      await placeMarkers(map, data4);
-      await placeMarkers(map, data5);
+      const datalist = ['0', '500', '1000', '1500', '2000'];
+      datalist.forEach(async (element) => {
+        const data = await retrieveMarkerData(element);
+        await placeMarkers(map, data);
+      });
     });
   });
 
